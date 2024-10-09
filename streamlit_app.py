@@ -6,6 +6,7 @@ import seaborn as sns  # in terminal, type: pip install seaborn
 
 import codecs 
 import streamlit.components.v1 as components
+import matplotlib.pyplot as plt
 
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
@@ -70,6 +71,11 @@ if app_page == 'Visualization':
 if app_page == "Prediction":
 
     st.title("03 Prediction")
+
+    # option for sample size selection
+    sample_size = st.sidebar.slider("Select sample from Dataset", min_value = 10, max_value = 100, step = 10, value = 100)
+    df_sample = df.sample(frac = sample_size / 100)
+
     list_columns = df.columns
     input_lr = st.multiselect("Select variables:", list_columns, ["quality", "citric acid"])
 
@@ -79,8 +85,11 @@ if app_page == "Prediction":
     X = df2
     y = df["alcohol"]  # target variable
 
+    # option for test set size
+    test_size = st.sidebar.slider("Select test size (in percentage)", min_value = 10, max_value = 100, step = 10, value = 100)
+
     # step 2 - splitting into 4 chunks (X_train, X_test, y_train, y_test)
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.2)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = test_size, random_state = 42)
 
     # step 3 - initialize linear regression
     lr = LinearRegression()
@@ -97,6 +106,21 @@ if app_page == "Prediction":
 
     st.write("Mean Absolute Error:", mae)
     st.write("R2 output:", r2)
+
+    st.subheader("Explainable AI")
+    importance = np.abs(lr.coef_)
+    feature_importance_df = pd.DataFrame({
+        'Feature': df2.columns,
+        'Importance': importance
+    }).sort_values(by = "Importance", ascending = False)
+
+    st.dataframe(feature_importance_df)
+
+    fig, ax = plt.subplots(figsize = (10,6))
+    sns.barplot(x = 'Importance', y = 'Feature', data = feature_importance_df, ax = ax, palette = 'viridis')
+    ax.set_title("Feature Importance Bar Plot")
+
+    st.pyplot(fig)
 
 
 # type the following in the terminal:
